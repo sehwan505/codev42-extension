@@ -4,7 +4,7 @@ import { getWebviewContent } from '../webview/PromptPage';
 import { applyModification } from '../service/modificationService';
 
 export function registerCommands(context: vscode.ExtensionContext) {
-  let disposable = vscode.commands.registerCommand('extension.openCodevPage', async () => {
+  let disposable = vscode.commands.registerCommand('codev42.openCodevPage', async () => {
     try {
       const gitInfo = await getGitInfo();
       
@@ -32,6 +32,5 @@ export function registerCommands(context: vscode.ExtensionContext) {
       vscode.window.showErrorMessage(`Git 정보를 가져오는 중 에러 발생: ${err}`);
     }
   });
-
   context.subscriptions.push(disposable);
 } 
