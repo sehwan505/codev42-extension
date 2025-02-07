@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { WebviewMessage, BackendResponse } from '../types';
-
+import { handleSendPrompt } from './generatePlan';
 export class WebviewService {
   private panel: vscode.WebviewPanel | null = null;
   private readonly context: vscode.ExtensionContext;
@@ -47,6 +47,9 @@ export class WebviewService {
       case 'requestData':
         await this.handleDataRequest(message.payload);
         break;
+      case 'sendPrompt':
+        await handleSendPrompt(this.panel!, message.payload);
+        break;
       default:
         throw new Error(`Unknown command: ${message.command}`);
     }
@@ -69,6 +72,7 @@ export class WebviewService {
       throw new Error(`Task execution failed: ${error.message}`);
     }
   }
+
 
   private async makeBackendRequest(endpoint: string, data: any): Promise<BackendResponse> {
     // 실제 백엔드 요청 구현
