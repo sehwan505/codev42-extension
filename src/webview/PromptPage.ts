@@ -23,16 +23,28 @@ export function getWebviewContent(gitInfo: GitInfo): string {
     <button type="submit" id="taskButton">작업 수행</button>
   </form>
 
+  <div id="resultDisplay" style="margin-top:20px;">
+    <h2>작업 결과</h2>
+    <pre id="resultContent"></pre>
+  </div>
+
   <script>
     const vscode = acquireVsCodeApi();
     const handleSubmit = (event) => {
       event.preventDefault();
       const prompt = document.getElementById('prompt').value;
       vscode.postMessage({ 
-        command: 'sendPrompt',
+        command: 'generatePlan',
         prompt: prompt 
       });
     };
+
+    window.addEventListener('message', event => {
+      const message = event.data;
+      if (message.command === 'applyModification') {
+        document.getElementById('resultContent').innerText = JSON.stringify(message.data, null, 2);
+      }
+    });
   </script>
 </body>
 </html>`;

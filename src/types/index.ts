@@ -1,5 +1,5 @@
 export interface WebviewMessage {
-  command: 'performTask' | 'saveData' | 'requestData' | 'sendPrompt';
+  command: 'performTask' | 'saveData' | 'requestData' | 'generatePlan';
   payload?: any;
 }
 

@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { getGitInfo } from '../service/gitService';
 import { getWebviewContent } from '../webview/PromptPage';
 import { applyModification } from '../service/modificationService';
+import { handleGeneratePlan } from '../service/generatePlan';
 
 export function registerCommands(context: vscode.ExtensionContext) {
   let disposable = vscode.commands.registerCommand('codev42.openCodevPage', async () => {
@@ -18,10 +19,12 @@ export function registerCommands(context: vscode.ExtensionContext) {
 
       panel.webview.html = getWebviewContent(gitInfo);
 
-      // 웹뷰로부터 메시지 수신
+      // 웹뷰로부터 메시지 수신 (프롬프트 전달 및 수정 적용 처리)
       panel.webview.onDidReceiveMessage(
-        message => {
-          if (message.command === 'applyModification') {
+        async (message) => {
+          if (message.command === 'generatePlan') {
+            await handleGeneratePlan(panel, message);
+          } else if (message.command === 'applyModification') {
             applyModification(message.data);
           }
         },
