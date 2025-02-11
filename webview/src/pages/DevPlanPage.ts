@@ -1,8 +1,8 @@
-import { WebviewMessage } from '../types';
+import { WebviewMessage } from '../../../src/types/index.js';
 import * as vscode from 'vscode';
 import * as path from 'path';
 
-export class DevPlanPage {
+export default class DevPlanPage {
   private static instance: DevPlanPage;
   private readonly vscode: any;
   private readonly apiBaseUrl: string = 'http://localhost:8080';
