@@ -1,10 +1,9 @@
-export interface WebviewMessage {
-  command: 'performTask' | 'saveData' | 'requestData' | 'generatePlan';
+export interface RequestMessage {
+  command: 'performTask' | 'saveData' | 'getGitInfo' | 'generatePlan' | 'modifyPlan';
   payload?: any;
 }
 
-export interface BackendResponse {
-  status: 'success' | 'error';
-  data?: any;
-  error?: string;
+export interface ResponseMessage {
+  command: 'getPlan' | 'getGitInfo' | 'error';
+  payload?: any;
 }
