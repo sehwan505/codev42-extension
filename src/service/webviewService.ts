@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
-import { WebviewMessage, BackendResponse } from '../../../src/types';
-import { handleGeneratePlan } from './generatePlan';
+import { RequestMessage } from '../types';
+import { BackendResponse } from '../types/response';
+import { handleGeneratePlan } from './Plan';
+import { handleModifyPlan } from './Plan';
+import { handleGetGitInfo } from './gitService';
+
 export class WebviewService {
   private panel: vscode.WebviewPanel | null = null;
   private readonly context: vscode.ExtensionContext;
@@ -21,7 +25,7 @@ export class WebviewService {
     );
 
     this.panel.webview.onDidReceiveMessage(
-      async (message: WebviewMessage) => {
+      async (message: RequestMessage) => {
         try {
           await this.handleWebviewMessage(message);
         } catch (error: any) {
@@ -35,48 +39,24 @@ export class WebviewService {
     return this.panel;
   }
 
-  public async handleDataRequest(message: WebviewMessage) {
+  public async handleDataRequest(message: RequestMessage) {
     console.log('handleDataRequest', message);
   }
 
-  private async handleWebviewMessage(message: WebviewMessage) {
+  private async handleWebviewMessage(message: RequestMessage) {
     switch (message.command) {
-      case 'performTask':
-        await this.handlePerformTask(message.payload);
-        break;
-      case 'requestData':
-        await this.handleDataRequest(message.payload);
-        break;
       case 'generatePlan':
         await handleGeneratePlan(this.panel!, message.payload);
+        break;
+      case 'modifyPlan':
+        await handleModifyPlan(this.panel!, message.payload);
+        break;  
+      case 'getGitInfo':
+        await handleGetGitInfo(this.panel!);
         break;
       default:
         throw new Error(`Unknown command: ${message.command}`);
     }
   }
 
-  private async handlePerformTask(payload: any) {
-    try {
-      // 백엔드 요청 처리
-      const response: BackendResponse = await this.makeBackendRequest('/performTask', payload);
-      
-      if (response.status === 'success' && this.panel) {
-        await this.panel.webview.postMessage({
-          command: 'taskCompleted',
-          payload: response.data
-        });
-      } else {
-        throw new Error(response.error);
-      }
-    } catch (error: any) {
-      throw new Error(`Task execution failed: ${error.message}`);
-    }
-  }
-
-
-  private async makeBackendRequest(endpoint: string, data: any): Promise<BackendResponse> {
-    // 실제 백엔드 요청 구현
-    // axios나 node-fetch 사용 가능
-    return {} as BackendResponse;
-  }
 } 

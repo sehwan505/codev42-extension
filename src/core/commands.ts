@@ -1,50 +1,88 @@
 import * as vscode from 'vscode';
-import { applyModification } from '../../webview/src/service/modificationService';
-import { handleGeneratePlan } from '../../webview/src/service/generatePlan';
 import * as fs from 'fs';
 import * as path from 'path';
 
 export function registerCommands(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('codev42.openCodevPage', async () => {
     try {
-      // 웹뷰 패널 생성
       const panel = vscode.window.createWebviewPanel(
         'reactPage',
         'React SPA',
         vscode.ViewColumn.One,
         {
           enableScripts: true,
+          retainContextWhenHidden: true,
           localResourceRoots: [
-            vscode.Uri.file(path.join(context.extensionPath, 'media', 'build'))
+            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist')),
+            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist', 'assets'))
           ]
         }
       );
 
-      // 웹뷰로부터 메시지 수신 (프롬프트 전달 및 수정 적용 처리)
-      panel.webview.onDidReceiveMessage(
-        async (message) => {
-          if (message.command === 'generatePlan') {
-            await handleGeneratePlan(panel, message);
-          } else if (message.command === 'applyModification') {
-            applyModification(message.data);
-          }
-        },
-        undefined,
-        context.subscriptions
-      );
+      const indexPath = path.join(context.extensionPath, 'webview', 'dist', 'index.html');
 
-      // React 앱 빌드 결과물의 index.html 파일 로드
-      const indexHtmlPath = path.join(context.extensionPath, 'media', 'build', 'index.html');
-      let indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
+      fs.readFile(indexPath, 'utf8', (err, data) => {
+        if (err) {
+          panel.webview.html = `<h1>React 앱 로딩 중 오류 발생</h1><p>${err}</p>`;
+          return;
+        }
 
-      // webview에 리소스 URI 변환 (필요한 경우, js 및 css 파일 경로를 vscode-webview-resource: 형식으로 변환)
-      // 예를 들어, index.html 내 <script src="bundle.js"></script>를 아래와 같이 변환할 수 있습니다.
-      const bundleUri = panel.webview.asWebviewUri(
-        vscode.Uri.file(path.join(context.extensionPath, 'media', 'build', 'bundle.js'))
-      );
-      indexHtml = indexHtml.replace(/bundle\.js/g, bundleUri.toString());
-      
-      panel.webview.html = indexHtml;
+        const getWebviewUri = (filePath: string) => {
+          return panel.webview.asWebviewUri(
+            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist', filePath))
+          ).toString();
+        };
+
+        // CSP 설정 (필요에 따라 조정)
+        const csp = `
+          <meta http-equiv="Content-Security-Policy" 
+                content="default-src 'self' ${panel.webview.cspSource} 'unsafe-inline' 'unsafe-eval';
+                         img-src ${panel.webview.cspSource} https: data:;
+                         script-src ${panel.webview.cspSource} 'unsafe-inline' 'unsafe-eval';
+                         style-src ${panel.webview.cspSource} 'unsafe-inline';">
+        `;
+
+        // 최초에 acquireVsCodeApi() 호출 후 재정의
+        // → 이후 React 앱 내부에서 acquireVsCodeApi()를 호출해도 같은 인스턴스를 반환하게 함.
+        const vscodeApiScript = `
+          <script>
+            (function() {
+              const vscodeInstance = acquireVsCodeApi();
+              window.acquireVsCodeApi = function() { return vscodeInstance; };
+              window.vscode = vscodeInstance;
+            })();
+          </script>
+        `;
+
+        // Base 태그 설정 (웹뷰 URI를 기준으로 상대 경로 처리)
+        const baseTag = `<base href="${getWebviewUri('')}/">`;
+
+        // 기존 index.html 내용이 있다면 정제하거나 그대로 사용할 수 있습니다.
+        // 여기서는 직접 HTML 템플릿을 구성하는 예제로 작성합니다.
+        const htmlContent = `
+          <!doctype html>
+          <html lang="en">
+            <head>
+              ${csp}
+              ${baseTag}
+              <meta charset="UTF-8" />
+              <link rel="icon" type="image/svg+xml" href="${getWebviewUri('vite.svg')}" />
+              <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+              <title>Vite + React + TS</title>
+              ${vscodeApiScript}
+              <link rel="stylesheet" href="${getWebviewUri('assets/index.css')}">
+              <script type="module" crossorigin src="${getWebviewUri('assets/index.js')}"></script>
+            </head>
+            <body>
+              <div id="root"></div>
+            </body>
+          </html>
+        `;
+
+        panel.webview.html = htmlContent;
+
+        console.log('Webview HTML content:', htmlContent);
+      });
     } catch (err) {
       vscode.window.showErrorMessage(`React 페이지 로드 중 에러 발생: ${err}`);
     }
