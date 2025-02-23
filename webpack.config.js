@@ -46,42 +46,4 @@ const extensionConfig = {
   },
 };
 
-const webviewConfig = {
-  entry: './src/webview/index.ts',
-  output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'webview.js'
-  },
-  module: {
-    rules: [
-      {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
-        exclude: /node_modules/
-      },
-      {
-        test: /\.css$/,
-        use: [
-          'style-loader',
-          'css-loader',
-          {
-            loader: 'postcss-loader',
-            options: {
-              postcssOptions: {
-                plugins: [
-                  require('tailwindcss'),
-                  require('autoprefixer'),
-                ],
-              },
-            },
-          },
-        ],
-      }
-    ]
-  },
-  resolve: {
-    extensions: ['.tsx', '.ts', '.js', '.css']
-  }
-};
-
-module.exports = [ extensionConfig, webviewConfig ];
+module.exports = [ extensionConfig ];
