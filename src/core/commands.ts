@@ -1,22 +1,16 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
+import { WebviewService } from '../service/webviewService';
 
 export function registerCommands(context: vscode.ExtensionContext) {
   const disposable = vscode.commands.registerCommand('codev42.openCodevPage', async () => {
     try {
-      const panel = vscode.window.createWebviewPanel(
+      const webviewService = new WebviewService(context);
+      const panel = webviewService.createWebviewPanel(
         'reactPage',
         'React SPA',
         vscode.ViewColumn.One,
-        {
-          enableScripts: true,
-          retainContextWhenHidden: true,
-          localResourceRoots: [
-            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist')),
-            vscode.Uri.file(path.join(context.extensionPath, 'webview', 'dist', 'assets'))
-          ]
-        }
       );
 
       const indexPath = path.join(context.extensionPath, 'webview', 'dist', 'index.html');

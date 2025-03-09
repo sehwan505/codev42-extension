@@ -16,7 +16,7 @@ const GeneratePlanPage: React.FC = () => {
     const prompt = promptInput.value;
     vscode.postMessage({ 
       command: 'generatePlan',
-      prompt: prompt 
+      payload: { prompt: prompt }
     });
   };
 
