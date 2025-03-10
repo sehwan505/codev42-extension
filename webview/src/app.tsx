@@ -13,7 +13,7 @@ function App() {
       <Routes>
         {/* <Route path="/" element={<PromptPage />} /> */}
         <Route path="/dev-plan" element={<GeneratePlanPage />} />
-        <Route path="/modify-plan" element={<ModifyPlanPage plan={""} />} />
+        <Route path="/modify-plan" element={<ModifyPlanPage />} />
       </Routes>
     </Router>
   );

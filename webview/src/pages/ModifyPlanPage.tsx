@@ -1,28 +1,21 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
-// import { acquireVsCodeApi } from 'vscode'; 를 제거하고 전역 선언 사용
 declare function acquireVsCodeApi(): any;
 const vscode = acquireVsCodeApi();
 
-interface ModifyPlanPageProps {
-  plan: string;
-}
 
-const ModifyPlanPage: React.FC<ModifyPlanPageProps> = ({ plan }) => {
-
-    const parsePlan = (planData: any) => {
-        if (!planData || !planData.plan) return [];
-        try {
-            return planData.plan.map((item: string) => item);
-        } catch (error) {
-            console.error('계획 데이터 파싱 중 오류 발생:', error);
-            return [];
-        }
-    };
+const ModifyPlanPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const [planData, setPlanData] = useState<string[]>(parsePlan(plan));
-    
+  const data = searchParams.get('data');
+  console.log('data', data);
+
+  const parsedData = data ? JSON.parse(data) : { Plans: [], Language: 'python' };
+  
+  const [planData, setPlanData] = useState<string[]>(parsedData.Plans || []);
+  const [language, setLanguage] = useState<string>(parsedData.Language || 'Python');
+
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
@@ -35,7 +28,6 @@ const ModifyPlanPage: React.FC<ModifyPlanPageProps> = ({ plan }) => {
     return () => window.removeEventListener('message', handleMessage);
   }, [navigate]);
 
-
   const handleModifyPlan = () => {
     vscode.postMessage({
       command: 'modifyPlan',
@@ -43,14 +35,27 @@ const ModifyPlanPage: React.FC<ModifyPlanPageProps> = ({ plan }) => {
         modifiedPlan: planData
       }
     });
+    navigate(`/devplan?plan=${JSON.stringify(planData)}&language=${language}`);
   };
 
   return (
     <div>
       <h1>개발 계획 페이지</h1>
+      <div className="language-selector mb-4">
+        <label htmlFor="language" className="block mb-2">프로그래밍 언어</label>
+        <input 
+          type="text"
+          value={language}
+          onChange={(e) => setLanguage(e.target.value)}
+          placeholder="프로그래밍 언어를 입력하세요"
+          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        />
+      </div>
       <div className="p-5">
+        <label htmlFor="plan" className="block mb-2">개발 계획</label>
         {planData.map((item, index) => (
           <div key={index} className="mb-4">
+            <label className="block mb-2 font-medium text-gray-700">단계 {index + 1}</label>
             <textarea
               value={item}
               onChange={(e) => {
@@ -58,7 +63,7 @@ const ModifyPlanPage: React.FC<ModifyPlanPageProps> = ({ plan }) => {
                 newPlanData[index] = e.target.value;
                 setPlanData(newPlanData);
               }}
-              className="w-full min-h-[60px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full min-h-[500px] p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         ))}

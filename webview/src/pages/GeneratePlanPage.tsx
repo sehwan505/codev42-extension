@@ -26,7 +26,7 @@ const GeneratePlanPage: React.FC = () => {
       if (message.command === 'getGitInfo') {
         setGitInfo(message.data);
       } else if (message.command === 'getPlan') {
-        navigate('/modifyplan', { state: { plan: message.data } });
+        navigate(`/modify-plan?data=${JSON.stringify(message.data)}`);
       }
     };
 
