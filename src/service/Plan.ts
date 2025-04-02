@@ -2,10 +2,15 @@ import * as vscode from 'vscode';
 
 export async function handleGeneratePlan(panel: vscode.WebviewPanel, message: any) {
   try {
+    console.log('handleGeneratePlan', message);
     const response = await fetch('http://localhost:8080/generate-plan', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ Prompt: message.prompt })
+      body: JSON.stringify({ 
+        Prompt: message.prompt,
+        ProjectId: message.projectId,
+        Branch: message.branch
+      })
     });
     const data = await response.json();
     if (panel) {
