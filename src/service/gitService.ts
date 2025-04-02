@@ -25,7 +25,14 @@ export async function handleGetGitInfo(panel: vscode.WebviewPanel) {
             return;
           }
           const commitInfo = stdoutCommit.split('\n').map(commit => commit.trim());
-          resolve({ branch, commitInfo });
+          exec('git config --get remote.origin.url', { cwd: workspacePath }, (err, stdoutRepo) => {
+            if (err) {
+              reject(err.message);
+              return;
+            }
+            const repository = stdoutRepo.trim();
+            resolve({ branch, repository, commitInfo });
+          });
         });
       });
     });
