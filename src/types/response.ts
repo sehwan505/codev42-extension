@@ -1,7 +1,6 @@
 export interface GitInfo {
     branch: string;
     repository?: string;
-    commitInfo?: string[];
 }
 
 export interface Plan {

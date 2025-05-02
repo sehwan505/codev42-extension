@@ -1,8 +1,7 @@
 import * as vscode from 'vscode';
 import { RequestMessage } from '../types';
 import { BackendResponse } from '../types/response';
-import { handleGeneratePlan } from './Plan';
-import { handleModifyPlan } from './Plan';
+import { handleGeneratePlan, handleModifyPlan, handleImplementPlan } from './Plan';
 import { handleGetGitInfo } from './gitService';
 
 export class WebviewService {
@@ -47,10 +46,16 @@ export class WebviewService {
     switch (message.command) {
       case 'generatePlan':
         await handleGeneratePlan(this.panel!, message.payload);
+        console.log('generatePlan', message.payload);
         break;
       case 'modifyPlan':
+        console.log('modifyPlan', message.payload);
         await handleModifyPlan(this.panel!, message.payload);
-        break;  
+        break;
+      case 'implementPlan':
+        console.log('implementPlan', message.payload);
+        await handleImplementPlan(this.panel!, message.payload);
+        break;
       case 'getGitInfo':
         await handleGetGitInfo(this.panel!);
         break;
