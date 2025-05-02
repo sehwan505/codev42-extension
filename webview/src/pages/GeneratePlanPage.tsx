@@ -24,9 +24,14 @@ const GeneratePlanPage: React.FC = () => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       if (message.command === 'getGitInfo') {
-        setGitInfo(message.data);
+        if (message.data.error) {
+          alert(message.data.error);
+        }
+        else {
+          setGitInfo(message.data);
+        }
       } else if (message.command === 'getPlan') {
-        navigate(`/modify-plan?data=${JSON.stringify(message.data)}`);
+        navigate('/modify-plan', { state: { plan: message.data } });
       }
     };
 
@@ -41,12 +46,8 @@ const GeneratePlanPage: React.FC = () => {
       <h1>개발 계획 페이지</h1>
       {gitInfo && (
         <>
+          <p>현재 Git 저장소: {gitInfo.repository}</p>
           <p>현재 Git 브랜치: {gitInfo.branch}</p>
-          <ul>
-            {gitInfo.commitInfo && gitInfo.commitInfo.map((commit: string, index: number) => (
-            <li key={index} className="commit-item">{commit}</li>
-            ))}
-          </ul>
         </>
       )}
       <form id="promptForm" onSubmit={handleSubmit}>
