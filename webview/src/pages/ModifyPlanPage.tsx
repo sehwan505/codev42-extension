@@ -34,14 +34,7 @@ const ModifyPlanPage: React.FC = () => {
           });
         }
       } else if (message.command === 'responseImplementPlan') {
-        if (message.data.status === 'Success') {
           navigate('/implement-plan', { state: { codes: message.data.codes, diagram: message.data.diagram } });
-        } else {
-          vscode.postMessage({
-            command: 'showErrorMessage', 
-            text: '계획 실행에 실패했습니다.'
-          });
-        }
       }
     };
 

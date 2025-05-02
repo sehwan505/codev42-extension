@@ -3,7 +3,6 @@ import { useLocation } from 'react-router';
 import mermaid from 'mermaid';
 
 declare function acquireVsCodeApi(): any;
-const vscode = acquireVsCodeApi();
 
 // mermaid 초기화
 mermaid.initialize({
@@ -14,7 +13,7 @@ mermaid.initialize({
 
 const ImplementPlanPage: React.FC = () => {
   const location = useLocation();
-  const locationState = location.state as { codes?: any[], diagram?: string } || {};
+  const locationState = location.state as { codes?: string[], diagram?: string } || {};
   const { codes = [], diagram = '' } = locationState;
   const mermaidRef = useRef<HTMLDivElement>(null);
 
@@ -44,7 +43,7 @@ const ImplementPlanPage: React.FC = () => {
               {codes.map((code, index) => (
                 <div key={index} className="bg-gray-50 rounded-lg p-4">
                   <pre className="bg-gray-900 text-gray-100 rounded-md p-4 overflow-x-auto">
-                    <code>{code.content}</code>
+                    <code>{code}</code>
                   </pre>
                 </div>
               ))}
