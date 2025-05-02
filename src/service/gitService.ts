@@ -19,20 +19,13 @@ export async function handleGetGitInfo(panel: vscode.WebviewPanel) {
         }
         const branch = stdoutBranch.trim();
 
-        exec('git log -10 --pretty=format:"%h - %s"', { cwd: workspacePath }, (err, stdoutCommit) => {
+        exec('git config --get remote.origin.url', { cwd: workspacePath }, (err, stdoutUrl) => {
           if (err) {
             reject(err.message);
             return;
           }
-          const commitInfo = stdoutCommit.split('\n').map(commit => commit.trim());
-          exec('git config --get remote.origin.url', { cwd: workspacePath }, (err, stdoutRepo) => {
-            if (err) {
-              reject(err.message);
-              return;
-            }
-            const repository = stdoutRepo.trim();
-            resolve({ branch, repository, commitInfo });
-          });
+          const repository = stdoutUrl.trim();
+          resolve({ branch, repository });
         });
       });
     });
