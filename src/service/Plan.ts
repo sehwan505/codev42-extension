@@ -73,3 +73,52 @@ export async function handleImplementPlan(panel: vscode.WebviewPanel, message: a
     console.error('Error:', error);
   }
 }
+
+export async function getPlanList(panel: vscode.WebviewPanel, message: any) {
+  try {
+    console.log('getPlanList', message);
+    const response = await fetch(`http://localhost:8080/get-plan-list/?ProjectId=${message.projectId}&Branch=${message.branch}`, {
+      method: 'GET'
+    });
+    
+    const data = await response.json();
+    if (panel) {
+      panel.webview.postMessage({ 
+        command: 'responsePlanList',
+        data: data.DevPlanList
+      });
+    }
+  } catch (error: any) {
+    console.error('Error:', error);
+    if (panel) {
+      panel.webview.postMessage({ 
+        command: 'responsePlanList',
+        data: {
+          plans: []
+        } 
+      });
+    }
+  }
+}
+
+export async function getPlanDetails(panel: vscode.WebviewPanel, message: any) {
+  try {
+    const response = await fetch(`http://localhost:8080/get-plan-details?DevPlanId=${message.devPlanId}`, {
+      method: 'GET'
+    });
+    
+    const data = await response.json();
+    if (panel) {
+      panel.webview.postMessage({ 
+        command: 'getPlan',
+        data: {
+          devPlanId: data.DevPlanId,
+          language: data.Language,
+          plans: data.Plans
+        } 
+      });
+    }
+  } catch (error: any) {
+    console.error('Error:', error);
+  }
+}
