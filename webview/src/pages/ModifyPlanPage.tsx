@@ -19,9 +19,11 @@ const ModifyPlanPage: React.FC = () => {
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-      setLoading(false); // 응답이 오면 로딩 상태 해제
+      
+      console.log('메시지 수신:', message); // 디버깅용 로그 추가
       
       if (message.command === 'responseModifyPlan') {
+        setLoading(false); // 응답이 오면 로딩 상태 해제
         if (message.data.status === 'Success') {
           vscode.postMessage({
             command: 'showInformationMessage',
@@ -34,7 +36,8 @@ const ModifyPlanPage: React.FC = () => {
           });
         }
       } else if (message.command === 'responseImplementPlan') {
-          navigate('/implement-plan', { state: { codes: message.data.codes, diagram: message.data.diagram } });
+        setLoading(false); // 응답이 오면 로딩 상태 해제
+        navigate('/implement-plan', { state: { code: message.data.code, diagram: message.data.diagram } });
       }
     };
 
@@ -43,8 +46,8 @@ const ModifyPlanPage: React.FC = () => {
   }, [navigate]);
 
   const handleModifyPlan = () => {
+    console.log('계획 수정 시작, 로딩 상태 활성화'); // 디버깅용 로그
     setLoading(true); // 로딩 상태 활성화
-    console.log('handleModifyPlan', planData, language, devPlanId);
     vscode.postMessage({
       command: 'modifyPlan',
       payload: {
@@ -56,6 +59,7 @@ const ModifyPlanPage: React.FC = () => {
   };
 
   const handleImplementPlan = () => {
+    console.log('계획 실행 시작, 로딩 상태 활성화'); // 디버깅용 로그
     setLoading(true); // 로딩 상태 활성화
     vscode.postMessage({
       command: 'implementPlan',
@@ -71,17 +75,10 @@ const ModifyPlanPage: React.FC = () => {
     setPlanData(newPlanData);
   };
 
-  const Spinner = () => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
-    </div>
-  );
-
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {loading && <Spinner />}
-      <div className="max-w-5xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">개발 계획 수정</h1>
+    <div className="bg-gray-50 min-h-screen flex justify-center">
+      <div className="w-full max-w-5xl py-8 px-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">개발 계획 수정</h1>
         
         <div className="bg-white rounded-lg shadow-md p-6 mb-6">
           <div className="mb-6">
@@ -179,31 +176,42 @@ const ModifyPlanPage: React.FC = () => {
               </div>
             ))}
             
-            <button
-              onClick={() => {
-                setPlanData([...planData, {
-                  ClassName: '',
-                  Annotations: []
-                }]);
-              }}
-              className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-200 mb-6 font-medium"
-            >
-              클래스 추가
-            </button>
+            <div className="flex justify-center mb-6">
+              <button
+                onClick={() => {
+                  setPlanData([...planData, {
+                    ClassName: '',
+                    Annotations: []
+                  }]);
+                }}
+                className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-200 font-medium"
+              >
+                클래스 추가
+              </button>
+            </div>
             
-            <div className="mt-6">
-              <button
-                onClick={handleModifyPlan}
-                className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg mr-3"
-              >
-                계획 수정하기
-              </button>
-              <button
-                onClick={handleImplementPlan}
-                className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg"
-              >
-                계획 실행하기
-              </button>
+            <div className="mt-6 flex justify-center">
+              {loading ? (
+                <div className="flex flex-col items-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500 mb-3"></div>
+                  <p className="text-gray-700">처리 중입니다...</p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={handleModifyPlan}
+                    className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg mr-3"
+                  >
+                    계획 수정하기
+                  </button>
+                  <button
+                    onClick={handleImplementPlan}
+                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg"
+                  >
+                    계획 실행하기
+                  </button>
+                </>
+              )}
             </div>
           </div>
         </div>
