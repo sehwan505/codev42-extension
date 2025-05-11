@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import { RequestMessage } from '../types';
 import { BackendResponse } from '../types/response';
-import { handleGeneratePlan, handleModifyPlan, handleImplementPlan, getPlanList, getPlanDetails } from './Plan';
+import { handleGeneratePlan, handleModifyPlan, handleImplementPlan, getPlanList, getPlanById } from './Plan';
 import { handleGetGitInfo } from './gitService';
 
 export class WebviewService {
@@ -49,11 +49,9 @@ export class WebviewService {
         console.log('generatePlan', message.payload);
         break;
       case 'modifyPlan':
-        console.log('modifyPlan', message.payload);
         await handleModifyPlan(this.panel!, message.payload);
         break;
       case 'implementPlan':
-        console.log('implementPlan', message.payload);
         await handleImplementPlan(this.panel!, message.payload);
         break;
       case 'getGitInfo':
@@ -62,8 +60,8 @@ export class WebviewService {
       case 'getPlanList':
         await getPlanList(this.panel!, message.payload);
         break;
-      case 'getPlanDetails':
-        await getPlanDetails(this.panel!, message.payload);
+      case 'getPlanById':
+        await getPlanById(this.panel!, message.payload);
         break;
       default:
         throw new Error(`Unknown command: ${message.command}`);

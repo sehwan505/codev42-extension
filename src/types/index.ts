@@ -1,9 +1,9 @@
 export interface RequestMessage {
-  command: 'performTask' | 'saveData' | 'getGitInfo' | 'generatePlan' | 'modifyPlan' | 'implementPlan' | 'getPlanList' | 'getPlanDetails';
+  command: 'performTask' | 'saveData' | 'getGitInfo' | 'generatePlan' | 'modifyPlan' | 'implementPlan' | 'getPlanList' | 'getPlanById';
   payload?: any;
 }
 
 export interface ResponseMessage {
-  command: 'getPlan' | 'getGitInfo' | 'error' | 'responseModifyPlan' | 'responseImplementPlan' | 'responsePlanList' | 'responsePlanDetails';
+  command: 'getPlan' | 'getGitInfo' | 'error' | 'responseModifyPlan' | 'responseImplementPlan' | 'responsePlanList' | 'responsePlanById';
   payload?: any;
 }

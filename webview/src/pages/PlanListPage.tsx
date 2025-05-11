@@ -28,8 +28,9 @@ const PlanListPage: React.FC = () => {
       const message = event.data;
       if (message.command === 'responsePlanList') {
         setPlans(message.data);
-        console.log('plans:', message.data);
         setLoading(false);
+      } else if (message.command === 'responsePlanById') {
+        navigate('/modify-plan', { state: { plan: message.data } });
       }
     };
 
@@ -39,7 +40,7 @@ const PlanListPage: React.FC = () => {
 
   const handleOpenPlan = (planItem: PlanItem) => {
     vscode.postMessage({
-      command: 'getPlanDetails',
+      command: 'getPlanById',
       payload: {
         devPlanId: planItem.DevPlanId
       }

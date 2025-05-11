@@ -101,16 +101,17 @@ export async function getPlanList(panel: vscode.WebviewPanel, message: any) {
   }
 }
 
-export async function getPlanDetails(panel: vscode.WebviewPanel, message: any) {
+export async function getPlanById(panel: vscode.WebviewPanel, message: any) {
   try {
-    const response = await fetch(`http://localhost:8080/get-plan-details?DevPlanId=${message.devPlanId}`, {
+    const response = await fetch(`http://localhost:8080/get-plan-by-id?DevPlanId=${message.devPlanId}`, {
       method: 'GET'
     });
     
     const data = await response.json();
+    console.log('getPlanById', data);
     if (panel) {
       panel.webview.postMessage({ 
-        command: 'getPlan',
+        command: 'responsePlanById',
         data: {
           devPlanId: data.DevPlanId,
           language: data.Language,
