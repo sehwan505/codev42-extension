@@ -8,19 +8,19 @@ const ModifyPlanPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const locationState = location.state as { plan?: any } || {};
-  console.log('locationState', locationState);
   
   const parsedData = locationState.plan || { plans: [], language: 'python', devPlanId: '' };
-  console.log('parsedData', parsedData);
   
   const devPlanId = parsedData.devPlanId;
   const [planData, setPlanData] = useState<PlanData['Plans']>(parsedData.plans || []);
   const [language, setLanguage] = useState<string>(parsedData.language || 'Python');
-  console.log('plan data', parsedData, devPlanId);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
+      setLoading(false); // 응답이 오면 로딩 상태 해제
+      
       if (message.command === 'responseModifyPlan') {
         if (message.data.status === 'Success') {
           vscode.postMessage({
@@ -43,6 +43,7 @@ const ModifyPlanPage: React.FC = () => {
   }, [navigate]);
 
   const handleModifyPlan = () => {
+    setLoading(true); // 로딩 상태 활성화
     console.log('handleModifyPlan', planData, language, devPlanId);
     vscode.postMessage({
       command: 'modifyPlan',
@@ -55,6 +56,7 @@ const ModifyPlanPage: React.FC = () => {
   };
 
   const handleImplementPlan = () => {
+    setLoading(true); // 로딩 상태 활성화
     vscode.postMessage({
       command: 'implementPlan',
       payload: {
@@ -69,8 +71,15 @@ const ModifyPlanPage: React.FC = () => {
     setPlanData(newPlanData);
   };
 
+  const Spinner = () => (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid"></div>
+    </div>
+  );
+
   return (
     <div className="bg-gray-50 min-h-screen">
+      {loading && <Spinner />}
       <div className="max-w-5xl mx-auto py-8 px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-6">개발 계획 수정</h1>
         
@@ -89,7 +98,7 @@ const ModifyPlanPage: React.FC = () => {
           <div>
             <h2 className="text-xl font-semibold text-gray-800 mb-4">개발 계획</h2>
             
-            {planData.map((plan, planIndex) => (
+            {Array.isArray(planData) && planData.map((plan, planIndex) => (
               <div key={planIndex} className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50">
                 <div className="mb-5">
                   <label className="block text-lg font-semibold text-gray-700 mb-2">클래스 이름</label>
@@ -107,7 +116,7 @@ const ModifyPlanPage: React.FC = () => {
                 
                 <h3 className="text-lg font-medium text-gray-700 mb-4">메서드</h3>
                 <div className="space-y-4">
-                  {plan.Annotations.map((annotation, annotationIndex) => (
+                  {Array.isArray(plan.Annotations) && plan.Annotations.map((annotation, annotationIndex) => (
                     <div key={annotationIndex} className="p-4 bg-white rounded-md shadow-sm border border-gray-200">
                       <div className="mb-3">
                         <label className="block font-medium text-gray-700 mb-1">메서드 이름</label>
