@@ -52,25 +52,53 @@ export async function handleModifyPlan(panel: vscode.WebviewPanel, message: any)
   }
 }
 
-export async function handleImplementPlan(panel: vscode.WebviewPanel, message: any) {
+interface Diagram {
+  Diagram: string;
+  Type: string;
+}
+
+interface ImplementPlanResponse {
+  Code: string;
+  Diagrams: Diagram[];
+}
+
+export async function handleImplementPlan(panel: vscode.WebviewPanel, message: { devPlanId: string }) {
   try {
     const response = await fetch('http://localhost:8080/implement-plan', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         DevPlanId: message.devPlanId,
       })
     });
-    const data = await response.json();
-    if (panel) {
-      panel.webview.postMessage({ command: 'responseImplementPlan', 
-        data: {
-          code: data.Code,
-          diagram: data.Diagram
-        } });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
-  } catch (error: any) {
-    console.error('Error:', error);
+
+    const data = await response.json() as ImplementPlanResponse;
+    
+    panel?.webview.postMessage({ 
+      command: 'responseImplementPlan', 
+      data: {
+        code: data.Code,
+        diagrams: data.Diagrams,
+        status: 'success'
+      }
+    });
+  } catch (error) {
+    console.error('Plan implementation failed:', error);
+    panel?.webview.postMessage({ 
+      command: 'responseImplementPlan', 
+      data: {
+        code: '',
+        diagrams: [],
+        status: 'error',
+        error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.'
+      }
+    });
   }
 }
 
