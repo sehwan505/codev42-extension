@@ -48,51 +48,54 @@ const PlanListPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto py-8 px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6">저장된 개발 계획 목록</h1>
-        
-        {loading ? (
-          <div className="text-center py-8">
-            <p className="text-gray-600">불러오는 중...</p>
-          </div>
-        ) : plans && plans.length === 0 ? (
-          <div className="bg-white rounded-lg shadow-md p-8 text-center">
-            <p className="text-gray-600 mb-4">저장된 개발 계획이 없습니다.</p>
+    <div className="bg-gray-50 min-h-screen w-full flex flex-col">
+      <div className="flex-1 flex items-start justify-center">
+        <div className="max-w-7xl w-full mx-auto py-16 px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-16">
+            <h1 className="text-5xl font-bold text-gray-800">저장된 계획 목록</h1>
             <button
-              onClick={() => navigate('/dev-plan')}
-              className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200 font-medium"
+              onClick={() => navigate('/')}
+              className="px-6 py-3 bg-gray-600 text-white rounded-xl hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-500 focus:ring-opacity-50 transition-all duration-200 font-medium text-lg"
             >
-              새 개발 계획 만들기
+              홈으로 돌아가기
             </button>
           </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <ul className="divide-y divide-gray-200">
-              {plans && plans.map((plan) => (
-                <li key={plan.DevPlanId} className="hover:bg-gray-50">
-                  <button
-                    onClick={() => handleOpenPlan(plan)}
-                    className="w-full text-left p-6 flex justify-between items-center"
-                  >
-                    <div>
-                      <h3 className="text-lg font-medium text-gray-800">{plan.Prompt}</h3>
-                        <p className="text-xs text-gray-500 mt-1">ID: {plan.DevPlanId}</p>
-                    </div>
-                  </button>
-                </li>
+          
+          {loading ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-xl">계획 목록을 불러오는 중...</p>
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="text-center py-16">
+              <p className="text-gray-600 text-xl">저장된 계획이 없습니다.</p>
+              <button
+                onClick={() => navigate('/dev-plan')}
+                className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 focus:outline-none transition-all duration-200 font-medium text-lg"
+              >
+                새 계획 만들기
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
+              {plans.map((plan, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-2xl shadow-xl p-8 hover:shadow-2xl transition-all duration-300 cursor-pointer transform hover:-translate-y-1"
+                  onClick={() => handleOpenPlan(plan)}
+                >
+                  <h3 className="text-xl font-semibold text-gray-800 mb-4 line-clamp-2">
+                    {plan.Prompt || `계획 ${index + 1}`}
+                  </h3>
+                  <p className="text-gray-600 mb-6 line-clamp-3 text-base leading-relaxed">
+                    {plan.Prompt || '설명이 없습니다.'}
+                  </p>
+                  <div className="text-sm text-gray-500">
+                    <p>ID: {plan.DevPlanId}</p>
+                  </div>
+                </div>
               ))}
-            </ul>
-          </div>
-        )}
-
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={() => navigate('/dev-plan')}
-            className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200 font-medium"
-          >
-            새 개발 계획 만들기
-          </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -76,143 +76,218 @@ const ModifyPlanPage: React.FC = () => {
     setPlanData(newPlanData);
   };
 
+  const addMethod = (planIndex: number) => {
+    const newPlanData = [...planData];
+    newPlanData[planIndex].Annotations.push({
+      Name: '',
+      Params: '',
+      Returns: '',
+      Description: ''
+    });
+    setPlanData(newPlanData);
+  };
+
+  const removeMethod = (planIndex: number, annotationIndex: number) => {
+    if (confirm('정말로 이 메서드를 삭제하시겠습니까?')) {
+      const newPlanData = [...planData];
+      newPlanData[planIndex].Annotations.splice(annotationIndex, 1);
+      setPlanData(newPlanData);
+    }
+  };
+
+  const addClass = () => {
+    setPlanData([...planData, {
+      ClassName: '',
+      Annotations: []
+    }]);
+  };
+
   return (
-    <div className="bg-gray-50 min-h-screen flex justify-center">
-      <div className="w-full max-w-5xl py-8 px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">개발 계획 수정</h1>
-        
-        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
-          <div className="mb-6">
-            <label htmlFor="language" className="block text-lg font-medium text-gray-700 mb-2">프로그래밍 언어</label>
-            <input 
-              type="text"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              placeholder="프로그래밍 언어를 입력하세요"
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-          
-          <div>
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">개발 계획</h2>
-            
-            {Array.isArray(planData) && planData.map((plan, planIndex) => (
-              <div key={planIndex} className="mb-8 p-5 border border-gray-200 rounded-lg bg-gray-50">
-                <div className="mb-5">
-                  <label className="block text-lg font-semibold text-gray-700 mb-2">클래스 이름</label>
-                  <input
-                    type="text"
-                    value={plan.ClassName}
-                    onChange={(e) => {
-                      const newPlanData = [...planData];
-                      newPlanData[planIndex].ClassName = e.target.value;
-                      setPlanData(newPlanData);
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  />
+    <div className="bg-gray-50 min-h-screen w-full flex flex-col" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
+      <div className="flex-1 flex items-start justify-center">
+        <div className="max-w-7xl w-full mx-auto py-16 px-6 lg:px-8">
+          {/* Header */}
+          <header className="mb-16">
+            <h1 className="text-5xl font-bold text-gray-800 text-center flex items-center justify-center">
+              <i className="fas fa-tasks text-indigo-600 mr-4"></i>
+              개발 계획 수정
+            </h1>
+          </header>
+
+          <div className="bg-white rounded-2xl shadow-xl p-12 mb-16 transition-all duration-300 hover:shadow-2xl">
+            {/* Programming Language Input */}
+            <div className="mb-12">
+              <label htmlFor="language" className="block text-2xl font-medium text-gray-700 mb-4 flex items-center">
+                <i className="fas fa-code text-indigo-600 mr-3"></i> 프로그래밍 언어
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <i className="fas fa-search text-gray-400 text-lg"></i>
                 </div>
-                
-                <h3 className="text-lg font-medium text-gray-700 mb-4">메서드</h3>
-                <div className="space-y-4">
-                  {Array.isArray(plan.Annotations) && plan.Annotations.map((annotation, annotationIndex) => (
-                    <div key={annotationIndex} className="p-4 bg-white rounded-md shadow-sm border border-gray-200">
-                      <div className="mb-3">
-                        <label className="block font-medium text-gray-700 mb-1">메서드 이름</label>
-                        <input
-                          type="text"
-                          value={annotation.Name}
-                          onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Name', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="block font-medium text-gray-700 mb-1">파라미터</label>
-                        <input
-                          type="text"
-                          value={annotation.Params}
-                          onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Params', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div className="mb-3">
-                        <label className="block font-medium text-gray-700 mb-1">반환 타입</label>
-                        <input
-                          type="text"
-                          value={annotation.Returns}
-                          onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Returns', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block font-medium text-gray-700 mb-1">설명</label>
-                        <textarea
-                          value={annotation.Description}
-                          onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Description', e.target.value)}
-                          className="w-full p-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                          rows={3}
-                        />
-                      </div>
+                <input 
+                  type="text"
+                  value={language}
+                  onChange={(e) => setLanguage(e.target.value)}
+                  placeholder="프로그래밍 언어를 입력하세요"
+                  className="w-full pl-12 px-6 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-lg"
+                />
+              </div>
+            </div>
+
+            {/* Development Plan Section */}
+            <div>
+              <h2 className="text-3xl font-semibold text-gray-800 mb-10 flex items-center">
+                <i className="fas fa-sitemap text-indigo-600 mr-3"></i> 개발 계획
+              </h2>
+              
+              {/* Class Cards */}
+              {Array.isArray(planData) && planData.map((plan, planIndex) => (
+                <div key={planIndex} className="mb-12 bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl">
+                  {/* Class Header */}
+                  <div className="bg-gradient-to-r from-indigo-50 to-white p-8 border-b border-gray-200">
+                    <div className="mb-6">
+                      <label className="block text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                        <i className="fas fa-cube text-indigo-600 mr-3"></i> 클래스 이름
+                      </label>
+                      <input
+                        type="text"
+                        value={plan.ClassName}
+                        onChange={(e) => {
+                          const newPlanData = [...planData];
+                          newPlanData[planIndex].ClassName = e.target.value;
+                          setPlanData(newPlanData);
+                        }}
+                        className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-lg"
+                        placeholder="클래스 이름을 입력하세요"
+                      />
                     </div>
-                  ))}
+                  </div>
+                  
+                  {/* Methods Section */}
+                  <div className="p-8">
+                    <h3 className="text-xl font-medium text-gray-700 mb-6 flex items-center">
+                      <i className="fas fa-cogs text-indigo-600 mr-3"></i> 메서드
+                    </h3>
+                    
+                    <div className="space-y-6">
+                      {Array.isArray(plan.Annotations) && plan.Annotations.map((annotation, annotationIndex) => (
+                        <div key={annotationIndex} className="bg-gray-50 border-2 border-gray-200 rounded-xl p-6 transition-all duration-200 hover:border-gray-300 hover:shadow-md">
+                          {/* Method header */}
+                          <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
+                            <span className="font-medium text-indigo-800 text-lg">메서드 #{annotationIndex + 1}</span>
+                            <button
+                              onClick={() => removeMethod(planIndex, annotationIndex)}
+                              className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-lg hover:bg-red-50" 
+                              title="메서드 삭제"
+                            >
+                              <i className="fas fa-times text-lg"></i>
+                            </button>
+                          </div>
+                          
+                          {/* Method name */}
+                          <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2 flex items-center text-base">
+                              <i className="fas fa-tag text-indigo-600 mr-2"></i> 메서드 이름
+                            </label>
+                            <input
+                              type="text"
+                              value={annotation.Name}
+                              onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Name', e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-base"
+                              placeholder="메서드 이름"
+                            />
+                          </div>
+                          
+                          {/* Parameters */}
+                          <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2 flex items-center text-base">
+                              <i className="fas fa-list-ul text-indigo-600 mr-2"></i> 파라미터
+                            </label>
+                            <input
+                              type="text"
+                              value={annotation.Params}
+                              onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Params', e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-base"
+                              placeholder="param1: type, param2: type"
+                            />
+                          </div>
+
+                          {/* Return type */}
+                          <div className="mb-4">
+                            <label className="block font-medium text-gray-700 mb-2 flex items-center text-base">
+                              <i className="fas fa-reply text-indigo-600 mr-2"></i> 반환 타입
+                            </label>
+                            <input
+                              type="text"
+                              value={annotation.Returns}
+                              onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Returns', e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-base"
+                              placeholder="반환 타입"
+                            />
+                          </div>
+                          
+                          {/* Description */}
+                          <div>
+                            <label className="block font-medium text-gray-700 mb-2 flex items-center text-base">
+                              <i className="fas fa-align-left text-indigo-600 mr-3"></i> 설명
+                            </label>
+                            <textarea
+                              value={annotation.Description}
+                              onChange={(e) => updateAnnotation(planIndex, annotationIndex, 'Description', e.target.value)}
+                              className="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-base leading-relaxed"
+                              rows={4}
+                              placeholder="메서드에 대한 설명을 입력하세요"
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    
+                    {/* Add method button */}
+                    <button
+                      onClick={() => addMethod(planIndex)}
+                      className="mt-6 px-6 py-4 flex items-center justify-center w-full rounded-xl border-2 border-dashed border-indigo-300 text-indigo-700 bg-indigo-50 hover:bg-indigo-100 transition-colors duration-200 font-medium text-lg"
+                    >
+                      <i className="fas fa-plus mr-3"></i> 메서드 추가
+                    </button>
+                  </div>
                 </div>
-                
+              ))}
+              
+              {/* Add class button */}
+              <div className="flex justify-center mb-12">
                 <button
-                  onClick={() => {
-                    const newPlanData = [...planData];
-                    newPlanData[planIndex].Annotations.push({
-                      Name: '',
-                      Params: '',
-                      Returns: '',
-                      Description: ''
-                    });
-                    setPlanData(newPlanData);
-                  }}
-                  className="mt-4 px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors duration-200 font-medium"
+                  onClick={addClass}
+                  className="px-8 py-4 flex items-center bg-green-100 text-green-700 rounded-xl hover:bg-green-200 transition-colors duration-200 font-medium text-lg"
                 >
-                  메서드 추가
+                  <i className="fas fa-plus-circle mr-3"></i> 클래스 추가
                 </button>
               </div>
-            ))}
-            
-            <div className="flex justify-center mb-6">
-              <button
-                onClick={() => {
-                  setPlanData([...planData, {
-                    ClassName: '',
-                    Annotations: []
-                  }]);
-                }}
-                className="px-4 py-2 bg-green-100 text-green-700 rounded-md hover:bg-green-200 transition-colors duration-200 font-medium"
-              >
-                클래스 추가
-              </button>
-            </div>
-            
-            <div className="mt-6 flex justify-center">
-              {loading ? (
-                <div className="flex flex-col items-center">
-                  <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-500 mb-3"></div>
-                  <p className="text-gray-700">처리 중입니다...</p>
-                </div>
-              ) : (
-                <>
-                  <button
-                    onClick={handleModifyPlan}
-                    className="px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg mr-3"
-                  >
-                    계획 수정하기
-                  </button>
-                  <button
-                    onClick={handleImplementPlan}
-                    className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-opacity-50 transition-colors duration-200 font-medium text-lg"
-                  >
-                    계획 실행하기
-                  </button>
-                </>
-              )}
+
+              {/* Action buttons */}
+              <div className="mt-16 flex flex-col sm:flex-row justify-center gap-6">
+                {loading ? (
+                  <div className="flex flex-col items-center justify-center">
+                    <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-indigo-600 mb-4"></div>
+                    <p className="text-gray-700 text-lg">처리 중입니다...</p>
+                  </div>
+                ) : (
+                  <div className="flex flex-col sm:flex-row gap-6 w-full sm:w-auto">
+                    <button
+                      onClick={handleModifyPlan}
+                      className="px-8 py-4 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:ring-opacity-50 transition-all duration-200 font-medium text-xl flex items-center justify-center hover:transform hover:-translate-y-1 hover:shadow-xl w-full sm:w-auto"
+                    >
+                      <i className="fas fa-edit mr-3"></i> 계획 수정하기
+                    </button>
+                    <button
+                      onClick={handleImplementPlan}
+                      className="px-8 py-4 bg-green-600 text-white rounded-xl hover:bg-green-700 focus:outline-none focus:ring-4 focus:ring-green-500 focus:ring-opacity-50 transition-all duration-200 font-medium text-xl flex items-center justify-center hover:transform hover:-translate-y-1 hover:shadow-xl w-full sm:w-auto"
+                    >
+                      <i className="fas fa-play mr-3"></i> 계획 실행하기
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

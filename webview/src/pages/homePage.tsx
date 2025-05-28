@@ -79,54 +79,56 @@ const HomePage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-5xl mx-auto py-12 px-4">
-        <h1 className="text-4xl font-bold text-gray-800 mb-8 text-center">코드 개발 도우미</h1>
-        
-        <div className="bg-white rounded-lg shadow-lg p-8 mb-10">
-          <h2 className="text-2xl font-semibold text-gray-800 mb-6">프로젝트 정보</h2>
+    <div className="bg-gray-50 min-h-screen w-full flex flex-col">
+      <div className="flex-1 flex items-start justify-center">
+        <div className="max-w-7xl w-full mx-auto py-16 px-6 lg:px-8">
+          <h1 className="text-6xl font-bold text-gray-800 mb-16 text-center">코드 개발 도우미</h1>
           
-          {loading ? (
-            <div className="text-center py-8">
-              <p className="text-gray-600">Git 정보를 불러오는 중...</p>
-            </div>
-          ) : gitInfo ? (
-            <div className="space-y-4">
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-700 mb-2">저장소</h3>
-                <p className="text-gray-800 font-mono bg-gray-100 p-2 rounded">{gitInfo.repository}</p>
+          <div className="bg-white rounded-2xl shadow-xl p-12 mb-16">
+            <h2 className="text-3xl font-semibold text-gray-800 mb-8">프로젝트 정보</h2>
+            
+            {loading ? (
+              <div className="text-center py-12">
+                <p className="text-gray-600 text-xl">Git 정보를 불러오는 중...</p>
               </div>
-              
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-gray-700 mb-2">브랜치</h3>
-                <p className="text-gray-800 font-mono bg-gray-100 p-2 rounded">{gitInfo.branch}</p>
+            ) : gitInfo ? (
+              <div className="space-y-6">
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <h3 className="text-xl font-medium text-gray-700 mb-4">저장소</h3>
+                  <p className="text-gray-800 font-mono bg-gray-100 p-4 rounded-lg text-lg">{gitInfo.repository}</p>
+                </div>
+                
+                <div className="bg-gray-50 p-6 rounded-xl">
+                  <h3 className="text-xl font-medium text-gray-700 mb-4">브랜치</h3>
+                  <p className="text-gray-800 font-mono bg-gray-100 p-4 rounded-lg text-lg">{gitInfo.branch}</p>
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className="text-center py-8">
-              <p className="text-red-600">Git 정보를 불러올 수 없습니다.</p>
-              <p className="text-gray-600 mt-2">프로젝트가 Git 저장소인지 확인해주세요.</p>
-            </div>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div 
-            onClick={goToGeneratePlan}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-transparent hover:border-blue-200"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">새 개발 계획 만들기</h2>
-            <p className="text-gray-600 mb-4">새로운 개발 계획을 생성하여 프로젝트 개발을 시작합니다.</p>
-            <div className="mt-4 text-blue-600 font-medium">시작하기 →</div>
+            ) : (
+              <div className="text-center py-12">
+                <p className="text-red-600 text-xl">Git 정보를 불러올 수 없습니다.</p>
+                <p className="text-gray-600 mt-3 text-lg">프로젝트가 Git 저장소인지 확인해주세요.</p>
+              </div>
+            )}
           </div>
           
-          <div 
-            onClick={goToPlanList}
-            className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow cursor-pointer border border-transparent hover:border-green-200"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">저장된 계획 불러오기</h2>
-            <p className="text-gray-600 mb-4">이전에 저장한 개발 계획 목록을 확인하고 작업을 계속합니다.</p>
-            <div className="mt-4 text-green-600 font-medium">목록 보기 →</div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div 
+              onClick={goToGeneratePlan}
+              className="bg-white rounded-2xl shadow-xl p-10 hover:shadow-2xl transition-all duration-300 cursor-pointer border border-transparent hover:border-blue-200 transform hover:-translate-y-1"
+            >
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">새 개발 계획 만들기</h2>
+              <p className="text-gray-600 mb-6 text-lg leading-relaxed">새로운 개발 계획을 생성하여 프로젝트 개발을 시작합니다.</p>
+              <div className="mt-6 text-blue-600 font-medium text-xl">시작하기 →</div>
+            </div>
+            
+            <div 
+              onClick={goToPlanList}
+              className="bg-white rounded-2xl shadow-xl p-10 hover:shadow-2xl transition-all duration-300 cursor-pointer border border-transparent hover:border-green-200 transform hover:-translate-y-1"
+            >
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">저장된 계획 불러오기</h2>
+              <p className="text-gray-600 mb-6 text-lg leading-relaxed">이전에 저장한 개발 계획 목록을 확인하고 작업을 계속합니다.</p>
+              <div className="mt-6 text-green-600 font-medium text-xl">목록 보기 →</div>
+            </div>
           </div>
         </div>
       </div>
