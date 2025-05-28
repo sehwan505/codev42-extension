@@ -57,9 +57,16 @@ interface Diagram {
   Type: string;
 }
 
+interface ExplainedSegment {
+  StartLine: number;
+  EndLine: number;
+  Explanation: string;
+}
+
 interface ImplementPlanResponse {
   Code: string;
   Diagrams: Diagram[];
+  ExplainedSegments?: ExplainedSegment[];
 }
 
 export async function handleImplementPlan(panel: vscode.WebviewPanel, message: { devPlanId: string }) {
@@ -79,12 +86,13 @@ export async function handleImplementPlan(panel: vscode.WebviewPanel, message: {
     }
 
     const data = await response.json() as ImplementPlanResponse;
-    
+    console.log('data', data);
     panel?.webview.postMessage({ 
       command: 'responseImplementPlan', 
       data: {
         code: data.Code,
         diagrams: data.Diagrams,
+        explainedSegments: data.ExplainedSegments || [],
         status: 'success'
       }
     });

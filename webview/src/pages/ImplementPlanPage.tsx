@@ -9,9 +9,16 @@ interface Diagram {
   Type: string;
 }
 
+interface ExplainedSegment {
+  StartLine: number;
+  EndLine: number;
+  Explanation: string;
+}
+
 interface ImplementPlanResponse {
   code: string;
   diagrams: Diagram[];
+  explainedSegments?: ExplainedSegment[];
 }
 
 // mermaid 초기화
@@ -32,9 +39,67 @@ const ImplementPlanPage: React.FC = () => {
   // 응답에서 코드와 다이어그램 추출
   const code = response?.code || '';
   const diagrams = response?.diagrams || [];
+  const explainedSegments = response?.explainedSegments || [];
   
   const [currentDiagramIndex, setCurrentDiagramIndex] = useState(0);
+  const [hoveredLine, setHoveredLine] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
   const mermaidRef = useRef<HTMLDivElement>(null);
+  const codeRef = useRef<HTMLPreElement>(null);
+
+  // 특정 줄에 대한 설명 찾기
+  const getExplanationForLine = (lineNumber: number): string | null => {
+    const segment = explainedSegments.find(
+      seg => lineNumber >= seg.StartLine && lineNumber <= seg.EndLine
+    );
+    return segment ? segment.Explanation : null;
+  };
+
+  // 코드를 줄별로 분할하고 각 줄에 호버 이벤트 추가
+  const renderCodeWithHover = () => {
+    const lines = code.split('\n');
+    return lines.map((line, index) => {
+      const lineNumber = index + 1;
+      const explanation = getExplanationForLine(lineNumber);
+      const hasExplanation = explanation !== null;
+
+      return (
+        <div
+          key={lineNumber}
+          className={`
+            block py-1 px-0 relative transition-all duration-200 font-mono
+            ${hasExplanation 
+              ? 'hover:bg-gray-800 hover:bg-opacity-50 cursor-help border-l-2 border-transparent hover:border-indigo-400' 
+              : ''
+            }
+          `}
+          onMouseEnter={(e) => {
+            if (hasExplanation) {
+              setHoveredLine(lineNumber);
+              const rect = e.currentTarget.getBoundingClientRect();
+              setTooltipPosition({
+                x: rect.right + 10,
+                y: rect.top
+              });
+            }
+          }}
+          onMouseLeave={() => {
+            setHoveredLine(null);
+          }}
+        >
+          <span className="text-gray-500 select-none mr-4 inline-block w-12 text-right tabular-nums text-sm">
+            {lineNumber}
+          </span>
+          <span className={`
+            whitespace-pre
+            ${hasExplanation ? 'border-b border-dotted border-gray-400 border-opacity-60' : ''}
+          `}>
+            {line || ' '}
+          </span>
+        </div>
+      );
+    });
+  };
 
   useEffect(() => {
     if (diagrams.length > 0 && diagrams[currentDiagramIndex] && mermaidRef.current) {
@@ -92,6 +157,7 @@ const ImplementPlanPage: React.FC = () => {
 
   // 현재 다이어그램 정보
   const currentDiagram = diagrams[currentDiagramIndex];
+  const currentExplanation = hoveredLine ? getExplanationForLine(hoveredLine) : null;
 
   return (
     <div className="bg-gray-50 min-h-screen w-full flex flex-col" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
@@ -114,10 +180,16 @@ const ImplementPlanPage: React.FC = () => {
           </header>
 
           {/* 코드 섹션 */}
-          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-16 transition-all duration-300 hover:shadow-2xl">
+          <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-16 transition-all duration-300 hover:shadow-2xl relative">
             <div className="bg-gray-800 px-8 py-6 flex justify-between items-center">
               <h2 className="text-2xl font-semibold text-white flex items-center">
                 <i className="fas fa-file-code text-indigo-400 mr-4"></i> 생성된 코드
+                {explainedSegments.length > 0 && (
+                  <span className="ml-4 text-sm bg-indigo-600 text-white px-3 py-1 rounded-full animate-pulse">
+                    <i className="fas fa-info-circle mr-1"></i>
+                    호버하여 설명 보기
+                  </span>
+                )}
               </h2>
               <div className="flex items-center space-x-3">
                 <span className="inline-flex h-4 w-4 rounded-full bg-red-500"></span>
@@ -125,10 +197,52 @@ const ImplementPlanPage: React.FC = () => {
                 <span className="inline-flex h-4 w-4 rounded-full bg-green-500"></span>
               </div>
             </div>
-            <div className="bg-gray-50 p-2">
-              <pre className="bg-gray-900 text-gray-100 rounded-xl p-8 overflow-x-auto text-base leading-relaxed" style={{ fontFamily: "'Consolas', 'Monaco', 'Andale Mono', monospace" }}>
-                <code>{code}</code>
+            <div className="bg-gray-50 p-2 relative">
+              <pre 
+                ref={codeRef}
+                className="bg-gray-900 text-gray-100 rounded-xl p-8 overflow-x-auto text-sm leading-6 relative font-mono" 
+              >
+                <code className="block">
+                  {renderCodeWithHover()}
+                </code>
               </pre>
+              
+              {/* 툴팁 */}
+              {hoveredLine && currentExplanation && (
+                <div
+                  className="fixed z-50 bg-white border border-gray-200 rounded-xl shadow-2xl p-5 max-w-sm transform -translate-y-1/2 animate-in fade-in slide-in-from-left-2 duration-200"
+                  style={{
+                    left: `${tooltipPosition.x}px`,
+                    top: `${tooltipPosition.y}px`,
+                  }}
+                >
+                  <div className="flex items-start space-x-3">
+                    <div className="flex-shrink-0">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <i className="fas fa-lightbulb text-indigo-600 text-sm"></i>
+                      </div>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-900 mb-2 flex items-center">
+                        <span className="bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs font-mono mr-2">
+                          {hoveredLine}
+                        </span>
+                        줄 설명
+                      </div>
+                      <div className="text-sm text-gray-700 leading-relaxed">
+                        {currentExplanation}
+                      </div>
+                    </div>
+                  </div>
+                  {/* 툴팁 화살표 */}
+                  <div className="absolute left-0 top-1/2 transform -translate-x-full -translate-y-1/2">
+                    <div className="w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-white"></div>
+                  </div>
+                  <div className="absolute left-0 top-1/2 transform -translate-x-full -translate-y-1/2 -ml-px">
+                    <div className="w-0 h-0 border-t-8 border-b-8 border-r-8 border-transparent border-r-gray-200"></div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

@@ -38,7 +38,7 @@ const ModifyPlanPage: React.FC = () => {
       } else if (message.command === 'responseImplementPlan') {
         setLoading(false); // 응답이 오면 로딩 상태 해제
         console.log('message.data', message.data);
-        navigate('/implement-plan', { state: { code: message.data.code, diagrams: message.data.diagrams} });
+        navigate('/implement-plan', { state: { code: message.data.code, diagrams: message.data.diagrams, explainedSegments: message.data.explainedSegments } });
       }
     };
 
