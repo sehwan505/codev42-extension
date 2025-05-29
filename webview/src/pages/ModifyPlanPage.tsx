@@ -15,6 +15,11 @@ const ModifyPlanPage: React.FC = () => {
   const [planData, setPlanData] = useState<PlanData['Plans']>(parsedData.plans || []);
   const [language, setLanguage] = useState<string>(parsedData.language || 'Python');
   const [loading, setLoading] = useState<boolean>(false);
+  const [deleteModalState, setDeleteModalState] = useState<{
+    isOpen: boolean;
+    type: 'class' | 'method';
+    indices: { planIndex: number; methodIndex?: number };
+  } | null>(null);
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
@@ -87,12 +92,11 @@ const ModifyPlanPage: React.FC = () => {
     setPlanData(newPlanData);
   };
 
-  const removeMethod = (planIndex: number, annotationIndex: number) => {
-    if (confirm('정말로 이 메서드를 삭제하시겠습니까?')) {
-      const newPlanData = [...planData];
-      newPlanData[planIndex].Annotations.splice(annotationIndex, 1);
-      setPlanData(newPlanData);
-    }
+  const removeMethod = (planIndex: number, methodIndex: number) => {
+    const newPlanData = [...planData];
+    newPlanData[planIndex].Annotations.splice(methodIndex, 1);
+    setPlanData(newPlanData);
+    setDeleteModalState(null);
   };
 
   const addClass = () => {
@@ -100,6 +104,13 @@ const ModifyPlanPage: React.FC = () => {
       ClassName: '',
       Annotations: []
     }]);
+  };
+
+  const removeClass = (planIndex: number) => {
+    const newPlanData = [...planData];
+    newPlanData.splice(planIndex, 1);
+    setPlanData(newPlanData);
+    setDeleteModalState(null);
   };
 
   return (
@@ -140,26 +151,83 @@ const ModifyPlanPage: React.FC = () => {
                 <i className="fas fa-sitemap text-indigo-600 mr-3"></i> 개발 계획
               </h2>
               
+              {/* Delete Confirmation Modal */}
+              {deleteModalState && deleteModalState.isOpen && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                  <div className="bg-white rounded-2xl p-8 max-w-md w-full mx-4 transform transition-all">
+                    <div className="text-center">
+                      <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+                        <i className="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        {deleteModalState.type === 'class' ? '클래스 삭제' : '메소드 삭제'}
+                      </h3>
+                      <p className="text-sm text-gray-500 mb-8">
+                        {deleteModalState.type === 'class' 
+                          ? '이 클래스를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'
+                          : '이 메소드를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'}
+                      </p>
+                      <div className="flex justify-center space-x-4">
+                        <button
+                          onClick={() => {
+                            if (deleteModalState.type === 'class') {
+                              removeClass(deleteModalState.indices.planIndex);
+                            } else {
+                              removeMethod(
+                                deleteModalState.indices.planIndex,
+                                deleteModalState.indices.methodIndex!
+                              );
+                            }
+                          }}
+                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors duration-200"
+                        >
+                          삭제
+                        </button>
+                        <button
+                          onClick={() => setDeleteModalState(null)}
+                          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors duration-200"
+                        >
+                          취소
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Class Cards */}
               {Array.isArray(planData) && planData.map((plan, planIndex) => (
                 <div key={planIndex} className="mb-12 bg-white border-2 border-gray-200 rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:shadow-xl">
                   {/* Class Header */}
                   <div className="bg-gradient-to-r from-indigo-50 to-white p-8 border-b border-gray-200">
-                    <div className="mb-6">
-                      <label className="block text-xl font-semibold text-gray-700 mb-4 flex items-center">
-                        <i className="fas fa-cube text-indigo-600 mr-3"></i> 클래스 이름
-                      </label>
-                      <input
-                        type="text"
-                        value={plan.ClassName}
-                        onChange={(e) => {
-                          const newPlanData = [...planData];
-                          newPlanData[planIndex].ClassName = e.target.value;
-                          setPlanData(newPlanData);
-                        }}
-                        className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-lg"
-                        placeholder="클래스 이름을 입력하세요"
-                      />
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex-1">
+                        <label className="block text-xl font-semibold text-gray-700 mb-4 flex items-center">
+                          <i className="fas fa-cube text-indigo-600 mr-3"></i> 클래스 이름
+                        </label>
+                        <input
+                          type="text"
+                          value={plan.ClassName}
+                          onChange={(e) => {
+                            const newPlanData = [...planData];
+                            newPlanData[planIndex].ClassName = e.target.value;
+                            setPlanData(newPlanData);
+                          }}
+                          className="w-full px-6 py-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-4 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 text-lg"
+                          placeholder="클래스 이름을 입력하세요"
+                        />
+                      </div>
+                      <button
+                        onClick={() => setDeleteModalState({
+                          isOpen: true,
+                          type: 'class',
+                          indices: { planIndex }
+                        })}
+                        className="ml-4 px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
+                        title="클래스 삭제"
+                      >
+                        삭제
+                      </button>
                     </div>
                   </div>
                   
@@ -176,11 +244,15 @@ const ModifyPlanPage: React.FC = () => {
                           <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-200">
                             <span className="font-medium text-indigo-800 text-lg">메서드 #{annotationIndex + 1}</span>
                             <button
-                              onClick={() => removeMethod(planIndex, annotationIndex)}
-                              className="text-red-600 hover:text-red-800 transition-colors p-2 rounded-lg hover:bg-red-50" 
+                              onClick={() => setDeleteModalState({
+                                isOpen: true,
+                                type: 'method',
+                                indices: { planIndex, methodIndex: annotationIndex }
+                              })}
+                              className="px-3 py-2 bg-red-100 text-red-600 rounded-lg hover:bg-red-200 transition-colors"
                               title="메서드 삭제"
                             >
-                              <i className="fas fa-times text-lg"></i>
+                              삭제
                             </button>
                           </div>
                           
@@ -197,7 +269,7 @@ const ModifyPlanPage: React.FC = () => {
                               placeholder="메서드 이름"
                             />
                           </div>
-                          
+
                           {/* Parameters */}
                           <div className="mb-4">
                             <label className="block font-medium text-gray-700 mb-2 flex items-center text-base">
