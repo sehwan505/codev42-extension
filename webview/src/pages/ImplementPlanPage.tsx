@@ -15,15 +15,18 @@ interface ExplainedSegment {
   Explanation: string;
 }
 
-interface ImplementPlanResponse {
-  code: string;
-  diagrams: Diagram[];
+
+interface ImplementPlanPageState {
+  code?: string;
+  diagrams?: Diagram[];
   explainedSegments?: ExplainedSegment[];
+  devPlanId?: string;
+  language?: string;
 }
 
-// mermaid 초기화
+// mermaid 초기화 
 mermaid.initialize({
-  startOnLoad: true,
+  startOnLoad: false,  // 자동 로딩 비활성화
   theme: 'default',
   securityLevel: 'loose',
 });
@@ -32,21 +35,123 @@ const ImplementPlanPage: React.FC = () => {
   const location = useLocation();
   console.log('location', location.state);
   
-  // location.state에서 직접 파싱
-  const response = location.state as ImplementPlanResponse;
+  // ModifyPlanPage처럼 데이터 파싱 및 기본값 설정
+  const locationState = location.state as ImplementPlanPageState || {};
   
-  console.log('response', response);
-  // 응답에서 코드와 다이어그램 추출
-  const code = response?.code || '';
-  const diagrams = response?.diagrams || [];
-  const explainedSegments = response?.explainedSegments || [];
+  console.log('locationState', locationState);
   
+  // 재실행을 위해 데이터를 state로 관리
+  const [code, setCode] = useState(locationState?.code || '');
+  const [diagrams, setDiagrams] = useState<Diagram[]>(locationState?.diagrams || []);
+  const [explainedSegments, setExplainedSegments] = useState<ExplainedSegment[]>(locationState?.explainedSegments || []);
+  const devPlanId = locationState?.devPlanId || '';
+  const [language, setLanguage] = useState(locationState?.language || '');
+  
+  console.log('parsed data:', { code: code.length, diagrams: diagrams.length, explainedSegments: explainedSegments.length, devPlanId, language });
+
   const [currentDiagramIndex, setCurrentDiagramIndex] = useState(0);
   const [hoveredLine, setHoveredLine] = useState<number | null>(null);
   const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const [diagramErrors, setDiagramErrors] = useState<{ [key: number]: string }>({});
+  const [diagramLoading, setDiagramLoading] = useState<{ [key: number]: boolean }>({});
+  const [isRetrying, setIsRetrying] = useState(false);
   const mermaidRef = useRef<HTMLDivElement>(null);
   const codeRef = useRef<HTMLPreElement>(null);
 
+  // vscode API 설정
+  const vscode = acquireVsCodeApi();
+
+  // vscode 메시지 리스너 수정
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      
+      // 디버깅을 위한 상세 로그 추가
+      console.log('받은 메시지:', message);
+      
+      if (message.command === 'responseImplementPlan') {
+        setIsRetrying(false);
+        
+        if (message.data?.status === 'success') {
+          const newData = message.data;
+          
+          // 새 데이터 상세 로그
+          console.log('newData:', newData);
+          console.log('newData 타입:', typeof newData);
+          console.log('newData 내용:', {
+            code: newData?.code?.length || 0,
+            diagrams: newData?.diagrams?.length || 0,
+            explainedSegments: newData?.explainedSegments?.length || 0,
+            language: newData?.language
+          });
+          
+          if (newData) {
+            // 기존 상태 로그
+            console.log('업데이트 전 상태:', {
+              code: code.length,
+              diagrams: diagrams.length,
+              explainedSegments: explainedSegments.length,
+              language
+            });
+            
+            // 상태 업데이트
+            setCode(newData.code || '');
+            setDiagrams(newData.diagrams || []);
+            setExplainedSegments(newData.explainedSegments || []);
+            setLanguage(newData.language || '');
+            
+            // 다이어그램 관련 상태 초기화
+            setCurrentDiagramIndex(0);
+            setDiagramErrors({});
+            setDiagramLoading({});
+            setHoveredLine(null);
+            
+            console.log('상태 업데이트 완료');
+            
+            vscode.postMessage({
+              command: 'showInformationMessage', 
+              text: '계획이 성공적으로 재실행되었습니다.'
+            });
+          } else {
+            console.error('newData가 null/undefined입니다');
+            vscode.postMessage({
+              command: 'showErrorMessage', 
+              text: '새로운 데이터가 없습니다.'
+            });
+          }
+        } else {
+          console.error('응답 상태가 success가 아닙니다:', message.data?.status);
+          console.error('에러 정보:', message.data?.error || message.data?.message);
+          
+          vscode.postMessage({
+            command: 'showErrorMessage', 
+            text: `계획 재실행에 실패했습니다: ${message.data?.error || message.data?.message || '알 수 없는 오류'}`
+          });
+        }
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+    return () => window.removeEventListener('message', handleMessage);
+  }, [code, diagrams, explainedSegments, language]);
+
+  // 다이어그램 유효성 검사 함수 개선
+  const validateDiagram = async (diagramContent: string): Promise<{ isValid: boolean; error?: string }> => {
+    if (!diagramContent || diagramContent.trim() === '') {
+      return { isValid: false, error: '다이어그램 내용이 비어있습니다.' };
+    }
+
+    try {
+      // 다이어그램 내용 정제
+      await mermaid.parse(diagramContent);
+      return { isValid: true };
+    } catch (error: any) {
+      return { 
+        isValid: false, 
+        error: `다이어그램 구문 오류: ${error.message || error.toString()}` 
+      };
+    }
+  };
   // 특정 줄에 대한 설명 찾기
   const getExplanationForLine = (lineNumber: number): string | null => {
     const segment = explainedSegments.find(
@@ -69,31 +174,42 @@ const ImplementPlanPage: React.FC = () => {
           className={`
             block py-1 px-0 relative transition-all duration-200 font-mono
             ${hasExplanation 
-              ? 'hover:bg-gray-800 hover:bg-opacity-50 cursor-help border-l-2 border-transparent hover:border-indigo-400' 
+              ? 'hover:bg-gray-800 hover:bg-opacity-50 border-l-2 border-transparent hover:border-indigo-400' 
               : ''
             }
           `}
-          onMouseEnter={(e) => {
-            if (hasExplanation) {
-              setHoveredLine(lineNumber);
-              const rect = e.currentTarget.getBoundingClientRect();
-              setTooltipPosition({
-                x: rect.right + 10,
-                y: rect.top
-              });
-            }
-          }}
-          onMouseLeave={() => {
-            setHoveredLine(null);
-          }}
         >
           <span className="text-gray-500 select-none mr-4 inline-block w-12 text-right tabular-nums text-sm">
             {lineNumber}
           </span>
-          <span className={`
-            whitespace-pre
-            ${hasExplanation ? 'border-b border-dotted border-gray-400 border-opacity-60' : ''}
-          `}>
+          <span 
+            className={`
+              whitespace-pre
+              ${hasExplanation ? 'border-b border-dotted border-gray-400 border-opacity-60 cursor-help' : ''}
+            `}
+            onMouseEnter={(e) => {
+              if (hasExplanation) {
+                setHoveredLine(lineNumber);
+                // 초기 위치 설정 (마우스 위치 기반)
+                setTooltipPosition({
+                  x: e.clientX + 20,
+                  y: e.clientY - 10
+                });
+              }
+            }}
+            onMouseMove={(e) => {
+              if (hasExplanation && hoveredLine === lineNumber) {
+                // 마우스를 따라 움직이도록 위치 업데이트
+                setTooltipPosition({
+                  x: e.clientX + 20,
+                  y: e.clientY - 10
+                });
+              }
+            }}
+            onMouseLeave={() => {
+              setHoveredLine(null);
+            }}
+          >
             {line || ' '}
           </span>
         </div>
@@ -102,20 +218,87 @@ const ImplementPlanPage: React.FC = () => {
   };
 
   useEffect(() => {
-    if (diagrams.length > 0 && diagrams[currentDiagramIndex] && mermaidRef.current) {
-      // 기존 내용 초기화
-      mermaidRef.current.innerHTML = '';
-      
-      mermaid.contentLoaded();
-      mermaid.render(`mermaid-diagram-${currentDiagramIndex}`, diagrams[currentDiagramIndex].Diagram)
-        .then(({ svg }) => {
+    let timeoutId: NodeJS.Timeout;
+    
+    const renderDiagram = async () => {
+      if (diagrams.length > 0 && diagrams[currentDiagramIndex] && mermaidRef.current) {
+        const currentDiagram = diagrams[currentDiagramIndex];
+        
+        // 로딩 시작
+        setDiagramLoading(prev => ({ ...prev, [currentDiagramIndex]: true }));
+        
+        // 에러 상태 초기화
+        setDiagramErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[currentDiagramIndex];
+          return newErrors;
+        });
+
+        console.log('Original diagram:', currentDiagram.Diagram);
+        
+        // 다이어그램 유효성 검사
+        const validationResult = await validateDiagram(currentDiagram.Diagram);
+        
+        if (!validationResult.isValid) {
+          setDiagramErrors(prev => ({
+            ...prev,
+            [currentDiagramIndex]: validationResult.error || '알 수 없는 다이어그램 오류'
+          }));
+          setDiagramLoading(prev => ({ ...prev, [currentDiagramIndex]: false }));
+          return;
+        }
+
+        // 기존 내용 초기화
+        mermaidRef.current.innerHTML = '';
+        
+        try {
+          // 고유한 ID 생성
+          const diagramId = `mermaid-diagram-${currentDiagramIndex}-${Date.now()}`;
+          const { svg } = await mermaid.render(diagramId, currentDiagram.Diagram);
+          
           if (mermaidRef.current) {
             mermaidRef.current.innerHTML = svg;
           }
-        })
-        .catch(error => console.error('Mermaid 렌더링 오류:', error));
-    }
+          setDiagramLoading(prev => ({ ...prev, [currentDiagramIndex]: false }));
+        } catch (error: any) {
+          console.error('Mermaid 렌더링 오류:', error);
+          console.error('Failed diagram content:', currentDiagram.Diagram);
+          setDiagramErrors(prev => ({
+            ...prev,
+            [currentDiagramIndex]: `다이어그램 렌더링에 실패했습니다: ${error.message || '알 수 없는 오류'}`
+          }));
+          setDiagramLoading(prev => ({ ...prev, [currentDiagramIndex]: false }));
+        }
+      }
+    };
+
+    // 100ms 디바운싱으로 빠른 전환 시 중복 렌더링 방지
+    timeoutId = setTimeout(renderDiagram, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [currentDiagramIndex, diagrams]);
+
+  // 모든 다이어그램 사전 검증 (컴포넌트 마운트 시)
+  useEffect(() => {
+    const preValidateAllDiagrams = async () => {
+      if (diagrams.length === 0) return;
+
+      for (let i = 0; i < diagrams.length; i++) {
+        const diagram = diagrams[i];
+        if (diagram && diagram.Diagram) {
+          const validationResult = await validateDiagram(diagram.Diagram);
+          if (!validationResult.isValid) {
+            setDiagramErrors(prev => ({
+              ...prev,
+              [i]: validationResult.error || '알 수 없는 다이어그램 오류'
+            }));
+          }
+        }
+      }
+    };
+
+    preValidateAllDiagrams();
+  }, [diagrams]);
 
   // 키보드 이벤트 처리
   useEffect(() => {
@@ -159,6 +342,28 @@ const ImplementPlanPage: React.FC = () => {
   const currentDiagram = diagrams[currentDiagramIndex];
   const currentExplanation = hoveredLine ? getExplanationForLine(hoveredLine) : null;
 
+  // 계획 재실행 함수
+  const retryImplementPlan = () => {
+    setIsRetrying(true);
+    
+    // devPlanId가 없으면 에러 메시지 표시
+    if (!devPlanId) {
+      vscode.postMessage({
+        command: 'showErrorMessage', 
+        text: '개발 계획 ID를 찾을 수 없습니다. 이전 페이지에서 다시 시도해주세요.'
+      });
+      setIsRetrying(false);
+      return;
+    }
+    
+    vscode.postMessage({
+      command: 'implementPlan',
+      payload: {
+        devPlanId: devPlanId,
+      }
+    });
+  };
+
   return (
     <div className="bg-gray-50 min-h-screen w-full flex flex-col" style={{ fontFamily: "'Noto Sans KR', sans-serif" }}>
       <div className="flex-1 flex items-start justify-center">
@@ -175,6 +380,22 @@ const ImplementPlanPage: React.FC = () => {
                 className="px-6 py-3 bg-transparent border-2 border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200 flex items-center font-medium text-lg"
               >
                 <i className="far fa-copy mr-3"></i> 코드 복사
+              </button>
+              <button
+                onClick={retryImplementPlan}
+                disabled={isRetrying}
+                className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:bg-orange-400 disabled:cursor-not-allowed transition-all duration-200 flex items-center font-medium text-lg"
+              >
+                {isRetrying ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-3"></div>
+                    재실행 중...
+                  </>
+                ) : (
+                  <>
+                    <i className="fas fa-redo mr-3"></i> 계획 재실행
+                  </>
+                )}
               </button>
             </div>
           </header>
@@ -269,10 +490,52 @@ const ImplementPlanPage: React.FC = () => {
               </div>
               
               <div className="bg-gray-50 p-8 relative min-h-[500px] flex items-center justify-center">
-                <div className="mermaid-diagram w-full max-w-5xl" ref={mermaidRef}></div>
+                {/* 로딩 상태 */}
+                {diagramLoading[currentDiagramIndex] && (
+                  <div className="flex flex-col items-center justify-center space-y-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+                    <p className="text-gray-600 font-medium">다이어그램을 렌더링하고 있습니다...</p>
+                  </div>
+                )}
+
+                {/* 에러 상태 */}
+                {diagramErrors[currentDiagramIndex] && !diagramLoading[currentDiagramIndex] && (
+                  <div className="flex flex-col items-center justify-center space-y-6 max-w-lg text-center">
+                    <div className="w-20 h-20 bg-red-100 rounded-full flex items-center justify-center">
+                      <i className="fas fa-exclamation-triangle text-red-600 text-2xl"></i>
+                    </div>
+                    <div>
+                      <h3 className="text-xl font-semibold text-gray-800 mb-2">다이어그램 오류</h3>
+                      <p className="text-gray-600 mb-4">{diagramErrors[currentDiagramIndex]}</p>
+                      <div className="bg-gray-100 rounded-lg p-4 text-left">
+                        <p className="text-sm text-gray-700 mb-2 font-medium">원본 다이어그램 데이터:</p>
+                        <pre className="text-xs text-gray-600 whitespace-pre-wrap break-all max-h-32 overflow-y-auto">
+                          {currentDiagram?.Diagram || '데이터 없음'}
+                        </pre>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        // 다이어그램 내용을 클립보드에 복사
+                        navigator.clipboard.writeText(currentDiagram?.Diagram || '')
+                          .then(() => alert('다이어그램 내용이 클립보드에 복사되었습니다.'))
+                          .catch(() => alert('복사에 실패했습니다.'));
+                      }}
+                      className="px-6 py-3 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-all duration-200 flex items-center font-medium"
+                    >
+                      <i className="fas fa-copy mr-2"></i>
+                      내용 복사
+                    </button>
+                  </div>
+                )}
+
+                {/* 정상 다이어그램 */}
+                {!diagramErrors[currentDiagramIndex] && !diagramLoading[currentDiagramIndex] && (
+                  <div className="mermaid-diagram w-full max-w-5xl" ref={mermaidRef}></div>
+                )}
                 
-                {/* 슬라이드 컨트롤 */}
-                {diagrams.length > 1 && (
+                {/* 슬라이드 컨트롤 - 에러나 로딩 중이 아닐 때만 표시 */}
+                {diagrams.length > 1 && !diagramErrors[currentDiagramIndex] && !diagramLoading[currentDiagramIndex] && (
                   <>
                     {/* 이전/다음 버튼 */}
                     <button
@@ -297,14 +560,24 @@ const ImplementPlanPage: React.FC = () => {
                         <button
                           key={index}
                           onClick={() => goToDiagram(index)}
-                          className={`w-3 h-3 rounded-full transition-all duration-200 ${
+                          className={`w-3 h-3 rounded-full transition-all duration-200 relative ${
                             index === currentDiagramIndex
                               ? 'bg-indigo-600 transform scale-125'
+                              : diagramErrors[index]
+                              ? 'bg-red-500 hover:bg-red-600'
                               : 'bg-gray-300 hover:bg-gray-400'
                           }`}
                           aria-label={`다이어그램 ${index + 1} (${diagram.Type})로 이동`}
-                          title={`${diagram.Type} 다이어그램`}
-                        />
+                          title={
+                            diagramErrors[index] 
+                              ? `오류: ${diagram.Type} 다이어그램` 
+                              : `${diagram.Type} 다이어그램`
+                          }
+                        >
+                          {diagramErrors[index] && (
+                            <i className="fas fa-exclamation text-white text-xs absolute inset-0 flex items-center justify-center"></i>
+                          )}
+                        </button>
                       ))}
                     </div>
                   </>
@@ -318,12 +591,17 @@ const ImplementPlanPage: React.FC = () => {
                     <button
                       key={index}
                       onClick={() => goToDiagram(index)}
-                      className={`px-4 py-2 rounded-full text-base transition-all duration-200 font-medium ${
+                      className={`px-4 py-2 rounded-full text-base transition-all duration-200 font-medium relative ${
                         index === currentDiagramIndex
                           ? 'bg-indigo-600 text-white'
+                          : diagramErrors[index]
+                          ? 'bg-red-100 text-red-700 hover:bg-red-200'
                           : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
                       }`}
                     >
+                      {diagramErrors[index] && (
+                        <i className="fas fa-exclamation-triangle mr-2"></i>
+                      )}
                       {diagram.Type}
                     </button>
                   ))}

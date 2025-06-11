@@ -20,8 +20,8 @@
     "keybindings": [
       {
         "command": "codev42.openCodevPage",
-        "key": "ctrl+alt+e",
-        "mac": "cmd+e"
+        "key": "ctrl+alt+.",
+        "mac": "cmd+."
       }
     ]
   },
